@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0c1019">
+<title>TAP EMPIRE</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0c1019;color:#fff;font-family:Arial,sans-serif;padding:16px 14px 90px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.logo{font-size:23px;font-weight:900;letter-spacing:1px}
+.logo span{color:#38d9a9}
+.small{color:#8290a5;font-size:12px}
+.card{background:#151e2d;border:1px solid #26354a;border-radius:17px;padding:17px;margin-bottom:14px}
+.balance{text-align:center}
+.balance h1{font-size:36px;margin:12px 0;color:#45e0a8}
+.balance p{color:#8c9ab0;margin:0;font-size:13px}
+.level{color:#f6c453;font-size:13px;margin-top:8px}
+.tap{width:190px;height:190px;border-radius:50%;border:8px solid #286c65;background:linear-gradient(145deg,#36d6a2,#168d79);color:#062b25;font-size:26px;font-weight:900;margin:20px auto;display:flex;align-items:center;justify-content:center;box-shadow:0 0 35px #20b78b44;cursor:pointer;user-select:none;transition:.08s}
+.tap:active{transform:scale(.93)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#101827;padding:13px;border-radius:12px}
+.stat b{display:block;font-size:19px;margin-top:5px}
+h2{font-size:18px;margin:5px 0 13px}
+.item{display:flex;align-items:center;gap:12px;padding:13px;background:#101827;border-radius:13px;margin-top:9px}
+.emoji{font-size:30px}
+.info{flex:1;min-width:0}
+.info b{font-size:14px}
+.info p{font-size:11px;color:#8997ac;margin:5px 0 0}
+.buy{background:#32c99b;border:0;border-radius:9px;padding:10px;color:#062b25;font-weight:900;min-width:82px}
+.buy:disabled{background:#354255;color:#8290a5}
+button{cursor:pointer}
+.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:15px}
+.tab{border:1px solid #29394d;background:#151e2d;color:#fff;padding:10px 14px;border-radius:10px;white-space:nowrap}
+.tab.active{background:#32c99b;color:#062b25;border-color:#32c99b}
+.section{display:none}
+.section.active{display:block}
+footer{text-align:center;color:#65748a;font-size:11px;margin-top:25px}
+.progress{height:7px;background:#283448;border-radius:10px;margin-top:10px;overflow:hidden}
+.progress div{height:100%;background:#32c99b;width:0}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">TAP <span>EMPIRE</span></div>
+<div class="small">TE GAMES<br>ECONOMY SIMULATOR</div>
+</header>
+
+<div class="card balance">
+<p>ТВОЙ КАПИТАЛ</p>
+<h1 id="money">0 ₽</h1>
+<p id="income">Доход: 0 ₽/сек</p>
+<div class="level" id="level">Уровень 1</div>
+<button class="tap" id="tap">TAP<br>+1 ₽</button>
+<div class="stats">
+<div class="stat"><span class="small">Всего кликов</span><b id="clicks">0</b></div>
+<div class="stat"><span class="small">Бизнесов</span><b id="businesses">0</b></div>
+</div>
+</div>
+
+<div class="tabs">
+<button class="tab active" data-tab="business">🏭 Бизнес</button>
+<button class="tab" data-tab="upgrade">⚡ Улучшения</button>
+<button class="tab" data-tab="tasks">🏆 Задания</button>
+<button class="tab" data-tab="profile">👤 Профиль</button>
+</div>
+
+<div id="business" class="section active">
+<div class="card">
+<h2>🏭 Предприятия</h2>
+<div id="businessList"></div>
+</div>
+</div>
+
+<div id="upgrade" class="section">
+<div class="card">
+<h2>⚡ Улучшения</h2>
+<div id="upgradeList"></div>
+</div>
+</div>
+
+<div id="tasks" class="section">
+<div class="card">
+<h2>🏆 Достижения</h2>
+<div id="taskList"></div>
+</div>
+</div>
+
+<div id="profile" class="section">
+<div class="card">
+<h2>👤 Твой профиль</h2>
+<p>Имя: <b>Император</b></p>
+<p>Уровень: <b id="profileLevel">1</b></p>
+<p>Капитал: <b id="profileMoney">0 ₽</b></p>
+<p>Общий доход: <b id="profileIncome">0 ₽/сек</b></p>
+<p>Всего кликов: <b id="profileClicks">0</b></p>
+<button class="tab" onclick="saveGame()">💾 Сохранить</button>
+<button class="tab" onclick="resetGame()">🔄 Сбросить игру</button>
+</div>
+<div class="card">
+<h2>TE GAMES</h2>
+<p class="small">TAP EMPIRE — создавай бизнес, развивай предприятия и строй свою экономическую империю.</p>
+<p class="small">Версия 1.0.0</p>
+</div>
+</div>
+
+<footer>TAP EMPIRE © 2026 · TE GAMES</footer>
+
+<script>
+const defaultGame={
+money:0,clicks:0,level:1,total:0,
+tapPower:1,
+businesses:[0,0,0,0,0,0],
+upgrades:[0,0,0]
+};
+
+let game;
+try{
+game={...defaultGame,...JSON.parse(localStorage.getItem("tapEmpireSave"))};
+}catch(e){game={...defaultGame};}
+
+const businesses=[
+{name:"Ларёк",emoji:"🏪",cost:25,income:1},
+{name:"Магазин",emoji:"🛒",cost:150,income:5},
+{name:"Кофейня",emoji:"☕",cost:750,income:20},
+{name:"Завод",emoji:"🏭",cost:3500,income:90},
+{name:"Небоскрёб",emoji:"🏢",cost:15000,income:400},
+{name:"Корпорация",emoji:"🌐",cost:80000,income:2000}
+];
+
+const upgrades=[
+{name:"Сильный клик",emoji:"👆",desc:"Увеличивает прибыль за нажатие",cost:100},
+{name:"Автоматизация",emoji:"⚙️",desc:"Увеличивает доход предприятий",cost:500},
+{name:"Бизнес-стратегия",emoji:"📈",desc:"Дополнительный доход бизнеса",cost:2500}
+];
+
+function income(){
+let result=0;
+businesses.forEach((b,i)=>{
+result+=game.businesses[i]*b.income;
+});
+return result*(1+game.upgrades[1]*0.5+game.upgrades[2]);
+}
+
+function moneyFormat(n){
+return Math.floor(n).toLocaleString("ru-RU")+" ₽";
+}
+
+function saveGame(){
+localStorage.setItem("tapEmpireSave",JSON.stringify(game));
+}
+
+function render(){
+document.getElementById("money").textContent=moneyFormat(game.money);
+document.getElementById("income").textContent="Доход: "+moneyFormat(income())+"/сек";
+document.getElementById("clicks").textContent=game.clicks;
+document.getElementById("businesses").textContent=game.businesses.reduce((a,b)=>a+b,0);
+document.getElementById("level").textContent="Уровень "+game.level;
+document.getElementById("tap").innerHTML="TAP<br>+"+game.tapPower+" ₽";
+
+document.getElementById("profileLevel").textContent=game.level;
+document.getElementById("profileMoney").textContent=moneyFormat(game.money);
+document.getElementById("profileIncome").textContent=moneyFormat(income())+"/сек";
+document.getElementById("profileClicks").textContent=game.clicks;
+
+renderBusinesses();
+renderUpgrades();
+renderTasks();
+}
+
+function renderBusinesses(){
+let html="";
+businesses.forEach((b,i)=>{
+let cost=Math.floor(b.cost*Math.pow(1.17,game.businesses[i]));
+html+=`<div class="item">
+<div class="emoji">${b.emoji}</div>
+<div class="info"><b>${b.name} × ${game.businesses[i]}</b>
+<p>Доход: ${moneyFormat(b.income)}/сек</p>
+<p>Цена: ${moneyFormat(cost)}</p></div>
+<button class="buy" ${game.money<cost?"disabled":""} onclick="buyBusiness(${i})">Купить</button>
+</div>`;
+});
+document.getElementById("businessList").innerHTML=html;
+}
+
+function buyBusiness(i){
+let cost=Math.floor(businesses[i].cost*Math.pow(1.17,game.businesses[i]));
+if(game.money<cost)return;
+game.money-=cost;
+game.businesses[i]++;
+render();
+saveGame();
+}
+
+function renderUpgrades(){
+let html="";
+upgrades.forEach((u,i)=>{
+let cost=Math.floor(u.cost*Math.pow(3,game.upgrades[i]));
+html+=`<div class="item">
+<div class="emoji">${u.emoji}</div>
+<div class="info"><b>${u.name} · ${game.upgrades[i]} ур.</b>
+<p>${u.desc}</p><p>Цена: ${moneyFormat(cost)}</p></div>
+<button class="buy" ${game.money<cost?"disabled":""} onclick="buyUpgrade(${i})">Купить</button>
+</div>`;
+});
+document.getElementById("upgradeList").innerHTML=html;
+}
+
+function buyUpgrade(i){
+let cost=Math.floor(upgrades[i].cost*Math.pow(3,game.upgrades[i]));
+if(game.money<cost)return;
+game.money-=cost;
+game.upgrades[i]++;
+if(i===0)game.tapPower+=2;
+render();
+saveGame();
+}
+
+function renderTasks(){
+let tasks=[
+["Первый капитал",game.clicks>=1,"Сделай первый клик"],
+["Малый бизнес",game.businesses.reduce((a,b)=>a+b,0)>=1,"Купи предприятие"],
+["Предприниматель",game.money>=1000,"Накопи 1000 ₽"],
+["Империя",game.businesses.reduce((a,b)=>a+b,0)>=10,"Купи 10 предприятий"],
+["Миллионер",game.total>=1000000,"Заработай миллион"]
+];
+document.getElementById("taskList").innerHTML=tasks.map(t=>
+`<div class="item"><div class="emoji">${t[1]?"🏅":"🔒"}</div><div class="info"><b>${t[0]}</b><p>${t[2]}</p></div>${t[1]?"✓":"..."}</div>`
+).join("");
+}
+
+document.getElementById("tap").addEventListener("click",()=>{
+game.money+=game.tapPower;
+game.total+=game.tapPower;
+game.clicks++;
+game.level=1+Math.floor(game.total/1000);
+render();
+saveGame();
+});
+
+document.querySelectorAll(".tab[data-tab]").forEach(btn=>{
+btn.addEventListener("click",()=>{
+document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+btn.classList.add("active");
+document.getElementById(btn.dataset.tab).classList.add("active");
+});
+});
+
+setInterval(()=>{
+let gain=income();
+game.money+=gain;
+game.total+=gain;
+game.level=1+Math.floor(game.total/1000);
+render();
+saveGame();
+},1000);
+
+function resetGame(){
+if(confirm("Удалить весь прогресс?")){
+localStorage.removeItem("tapEmpireSave");
+location.reload();
+}
+}
+
+render();
+</script>
+</body>
+</html>
